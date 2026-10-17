@@ -21,21 +21,37 @@ def run(page, argument, context):
 
     Must return a dictionary. Two possible shapes:
 
-    """
-    # YOUR CODE HERE:
-    #
-    # Part 1 - the not-ready check (our required failure behavior):
-    #   
-    #
-    # Part 2 - read the seats:
-    #   
-    #
-    # Part 3 - return {"ready": True, "seats": the_list}
+      Not ready: {"ready": False, "reason": "why the tool could not read seats"}
+      Ready:     {"ready": True, "seats": [{"seat": "1A", "status": "available"}, ...]}
 
+    Each seat's status is "available", "unavailable", or "selected".
+    """
+    # Part 1 - the not-ready check (our required failure behavior):
     if page.locator("#seatStage").is_visible() == False:
         return {"ready": False, "reason": "The seat selection stage is not visible."}
 
-    raise NotImplementedError("run is not written yet")
+    # Part 2 - read the seats:
+    buttons = page.locator("#seatMap button.seat")
+    seat_list = []
+
+    for index in range(buttons.count()):
+        button = buttons.nth(index)
+        seat_name = button.get_attribute("data-seat")
+        class_text = button.get_attribute("class")
+        if class_text is None:
+            class_text = ""
+
+        if button.is_disabled():
+            status = "unavailable"
+        elif "selected" in class_text.split():
+            status = "selected"
+        else:
+            status = "available"
+
+        seat_list.append({"seat": seat_name, "status": status})
+
+    # Part 3 - return {"ready": True, "seats": the_list}
+    return {"ready": True, "seats": seat_list}
 
 
 def main():
