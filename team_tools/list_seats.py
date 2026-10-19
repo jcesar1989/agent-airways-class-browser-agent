@@ -19,16 +19,18 @@ def validate(argument):
 def run(page, argument, context):
     """Read the seat map and return real seat statuses.
 
-    Must return a dictionary. Two possible shapes:
+    Returns the shared class format: {"ok": bool, "message": str, "data": dict}.
+    Two possible shapes:
 
-      Not ready: {"ready": False, "reason": "why the tool could not read seats"}
-      Ready:     {"ready": True, "seats": [{"seat": "1A", "status": "available"}, ...]}
+      Not ready: {"ok": False, "message": "The seat selection stage is not visible.", "data": {}}
+      Ready:     {"ok": True, "message": "Read 30 seats.",
+                  "data": {"seats": [{"seat": "1A", "status": "available"}, ...]}}
 
     Each seat's status is "available", "unavailable", or "selected".
     """
     # Part 1 - the not-ready check (our required failure behavior):
     if page.locator("#seatStage").is_visible() == False:
-        return {"ready": False, "reason": "The seat selection stage is not visible."}
+        return {"ok": False, "message": "The seat selection stage is not visible.", "data": {}}
 
     # Part 2 - read the seats:
     buttons = page.locator("#seatMap button.seat")
@@ -50,8 +52,10 @@ def run(page, argument, context):
 
         seat_list.append({"seat": seat_name, "status": status})
 
-    # Part 3 - return {"ready": True, "seats": the_list}
-    return {"ready": True, "seats": seat_list}
+    # Part 3 - return the result in the shared format.
+    # The message uses the real count, so nothing is hardcoded.
+    message = "Read " + str(len(seat_list)) + " seats."
+    return {"ok": True, "message": message, "data": {"seats": seat_list}}
 
 
 def main():
@@ -78,7 +82,7 @@ def main():
         print("\n--- FAILURE TEST: before reaching the seat map ---")
         result = run(browser_tools.page, {}, {})
         print("Result:", result)
-        if result.get("ready") is False:
+        if result["ok"] is False:
             print("PASS: tool reported not-ready instead of inventing seats.")
         else:
             print("FAIL: tool should have reported not-ready.")
@@ -92,10 +96,10 @@ def main():
         print("Result:", result)
 
         statuses = {}
-        for seat in result.get("seats", []):
+        for seat in result["data"].get("seats", []):
             statuses[seat["seat"]] = seat["status"]
 
-        if statuses.get("1A") in ("available", "selected") and statuses.get("1B") == "unavailable":
+        if result["ok"] is True and statuses.get("1A") in ("available", "selected") and statuses.get("1B") == "unavailable":
             print("PASS: 1A is choosable and 1B is unavailable, as on the demo site.")
         else:
             print("FAIL: expected 1A available and 1B unavailable. Check the output above.")
