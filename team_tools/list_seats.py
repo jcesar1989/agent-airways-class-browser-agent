@@ -28,6 +28,13 @@ def run(page, argument, context):
 
     Each seat's status is "available", "unavailable", or "selected".
     """
+    # Part 0 - check the argument before touching the browser.
+    # This tool takes no arguments, so anything other than {} is refused.
+    # It reuses validate() so the rule lives in one place.
+    is_valid, reason = validate(argument)
+    if is_valid == False:
+        return {"ok": False, "message": "Invalid argument: " + reason, "data": {}}
+
     # Part 1 - the not-ready check (our required failure behavior):
     if page.locator("#seatStage").is_visible() == False:
         return {"ok": False, "message": "The seat selection stage is not visible.", "data": {}}
@@ -79,6 +86,27 @@ def main():
     try:
         browser_tools.open_site()
 
+        print("\n--- INVALID ARGUMENT TEST: a wrong argument is refused ---")
+        url_before = browser_tools.page.url
+        bad_argument = {"seat": "1A"}
+
+        # 1. validate() should say False and explain why.
+        is_valid, reason = validate(bad_argument)
+        print("validate(" + str(bad_argument) + ") ->", is_valid, "|", reason)
+
+        # 2. run() should refuse too, without touching the browser.
+        result = run(browser_tools.page, bad_argument, {})
+        print("Result:", result)
+
+        # 3. Independent check: the page is still where it was.
+        url_after = browser_tools.page.url
+        print("Page URL before:", url_before, "| after:", url_after)
+
+        if is_valid is False and result["ok"] is False and url_before == url_after:
+            print("PASS: the bad argument was refused and the page did not change.")
+        else:
+            print("FAIL: the bad argument should have been refused.")
+
         print("\n--- FAILURE TEST: before reaching the seat map ---")
         result = run(browser_tools.page, {}, {})
         print("Result:", result)
@@ -103,6 +131,33 @@ def main():
             print("PASS: 1A is choosable and 1B is unavailable, as on the demo site.")
         else:
             print("FAIL: expected 1A available and 1B unavailable. Check the output above.")
+
+        # --- INDEPENDENT CHECK ---
+        # Read the page directly, without using the tool's answer,
+        # and compare what the browser shows with what the tool reported.
+        print("\n--- INDEPENDENT BROWSER CHECK ---")
+        page = browser_tools.page
+
+        # 1. Count the seat buttons on the page and compare with the tool's count.
+        page_count = page.locator("#seatMap button.seat").count()
+        print("Seat buttons on the page:", page_count, "| Seats reported by tool:", len(statuses))
+        if page_count == len(statuses):
+            print("PASS: the tool reported every seat on the page.")
+        else:
+            print("FAIL: the tool's seat count does not match the page.")
+
+        # 2. For 1A and 1B, read the button's disabled property straight from the page.
+        for seat_name in ["1A", "1B"]:
+            seat_button = page.locator('#seatMap button[data-seat="' + seat_name + '"]')
+            page_disabled = seat_button.is_disabled()
+            tool_status = statuses.get(seat_name)
+            print(seat_name, "- page disabled:", page_disabled, "| tool says:", tool_status)
+
+            # A seat is unavailable exactly when the page has it disabled.
+            if page_disabled == (tool_status == "unavailable"):
+                print("PASS:", seat_name, "matches the page.")
+            else:
+                print("FAIL:", seat_name, "does not match the page.")
 
         input("Press Enter to close the browser...")
     finally:
