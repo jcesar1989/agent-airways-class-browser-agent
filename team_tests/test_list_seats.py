@@ -17,8 +17,8 @@ def main():
     import sys
     from pathlib import Path
 
-    # Allow "python team_tools/list_seats.py" to find browser_tools.py
-    # in the repository root.
+    # Allow "python3 team_tests/test_list_seats.py" to find browser_tools.py
+    # and the team_tools folder in the repository root.
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     import browser_tools
     from team_tools import list_seats
