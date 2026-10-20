@@ -1,4 +1,4 @@
-python3 team_tools/list_seats.py
+python3 team_tests/test_list_seats.py
 
 --- INVALID ARGUMENT TEST: a wrong argument is refused ---
 validate({'seat': '1A'}) -> False | The argument must be an empty dictionary.
