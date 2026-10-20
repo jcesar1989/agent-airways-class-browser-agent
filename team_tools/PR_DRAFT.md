@@ -22,21 +22,33 @@ The only allowed argument is an empty dictionary `{}`. The tool takes no inputs.
 
 ## What the browser actually returned
 
-The tool reads `#seatMap button.seat`, using each button's `data-seat` attribute and `disabled` property. On the demo site's seat map it returned all 30 seats, with 1A available and 1B unavailable, matching the page. An independent check in the test harness re-read the `disabled` property for 1A and 1B straight from the page and confirmed the tool's answers; the full trace is in `team_tools/test_results.txt`.
+The tool reads `#seatMap button.seat`, using each button's `data-seat` attribute and `disabled` property. On the demo site's seat map it returned all 30 seats, with 1A available and 1B unavailable, matching the page. An independent check in `team_tests/test_list_seats.py` re-read the seat count and the `disabled` property for 1A and 1B straight from the page and confirmed the tool's answers; the full trace is in `team_tests/test_results.txt`.
+
+## How to run the tests
+
+From the repository folder:
+
+```
+pip install -r requirements.txt
+python -m playwright install chromium
+python3 team_tests/test_list_seats.py
+```
+
+The test opens Agent Airways in a Playwright browser and runs the invalid-argument and not-ready tests on the opening page. When it pauses, use that same Playwright window to search for a flight (e.g. DCA → BOS, any date), click **Choose AA101**, then press Enter to run the success test and the independent browser check. `python3 tests.py` runs the 9 existing offline checks.
 
 ## Tests and evidence
 
 - [x] Ran `python tests.py` — all 9 offline checks passed
 - [x] Demonstrated a normal case — seat map visible: 30 seats read, 1A available, 1B unavailable
 - [x] Demonstrated an error or edge case — ran before reaching the seat map (not-ready result) and with an invalid argument (refused, page untouched)
-- [x] Recorded trace evidence — `team_tools/test_results.txt`
+- [x] Recorded trace evidence — `team_tests/test_results.txt`
 - [x] Did not add personal information, credentials, or real payment activity
 - [x] Kept the implementation understandable and narrow
 
 ## Team participation
 
 - **Julio Sepulveda (@jcesar1989):** Forked the class repository and created the `Branch_Julio` working branch. Manually explored the Agent Airways site in the browser to inspect the seat map's HTML structure (`#seatMap`, `button.seat`, `data-seat`, `disabled`). Wrote the initial `list_seats.py` — `validate()`, the not-ready check, and the seat-reading loop — and ran the manual browser tests.
-- **Manna Zachariah (@mannameriahzachariah):** Created her own `Branch_Manna` branch. Converted the tool to the shared `ok/message/data` return format, made `run()` refuse invalid arguments, added the invalid-argument test and the independent browser check, and updated the recorded test results.
+- **Manna Zachariah (@mannameriahzachariah):** Created her own `Branch_Manna` branch and made the review fixes requested by the TA: restored `practice_dropdown.py` to the original class version, converted the tool to the shared `ok/message/data` return format, and made `run()` refuse invalid arguments before touching the browser. Added the invalid-argument test and the independent browser check (seat count, 1A and 1B read directly from the page), moved the tests into `team_tests/test_list_seats.py` as requested in review, re-ran all tests and `tests.py`, and updated the recorded results.
 
 ## Known limitations
 
